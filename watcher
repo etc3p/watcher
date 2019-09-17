@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -e
+#set -o xtrace # verbose debug
+
+#---> main interface -----------------------------------------------------------
+_interface () {
+# # initial variables # #
+target=$1 #TODO: support multiple hosts.
+outfile="outfile_"
+now=$(date +'%d-%m-%Y_%H:%M') # can be used as part of the file name
+c=$outfile$target
+echo -e "Watcher started...     $now"
+
+echo -e "[+] targeting: $target"
+touch $c
+
+# # tools deployment # #
+# amass #
+#amassExists=$(docker container ls -a | awk '$2 ~ /amass/' | awk 'NR==1{print$2}')
+#if [[ -z $amassExists ]] #if lengh of STRING is zero
+#then
+#    echo -e "Building amass from source...\n"
+#    docker build -t amass https://github.com/OWASP/Amass.git
+#fi
+#echo -e "[+] running $amassExists\n"
+#docker run amass enum -passive -d $target | tee -a $c
+#
+
+# sublist3r #
+# sublisterExists=$(docker container ls -a | awk '$2 ~ /sublist3r/ ' | awk 'NR==1{print$2}')
+# if [[ -z $sublisterExists ]]
+# then
+#  echo -e "[+] Pulling sublister..\n"
+#  docker pull opendevsecops/sublist3r
+# fi
+# echo -e "[+] running $sublisterExists\n"
+# docker run opendevsecops/sublist3r -d $target | grep $target | grep -v "\[|\-" | tee -a $c
+#
+
+# web archive # done
+echo -e "[+] curl to webarchive"
+echo " +--> extracting subdomains"
+curl -s "http://web.archive.org/cdx/search/cdx?url=*.$target/*&output=text&fl=original&collapse=urlkey" | sed 's~http[s]*://~~g'| cut -d "/" -f1 | cut -d ":" -f1 >> $c
+echo -e " +--> unrelatedly writing full output to webarchive_$target\n"
+curl -s "web.archive.org/cdx/search/cdx?url=$target/*&output=text&fl=original&collapse=urlkey" | grep -i -v -E "\/css|(\.(png|img|ttf|woff2?|ico|jpe?g|svg|gif|css|webp|eot|bootstrap|pdf|js))" | sort -u >> webarchive_$target
+#
+
+# cert spotter # done
+echo -e "[+] curl to certspotter\n"
+curl -s "https://certspotter.com/api/v0/certs?domain=$target" | tr ',' '\n' | grep $target | tr -d '":[]' | sed '/dns_names/d' >> $c
+#
+
+# crt.sh # done?
+echo -e "[+] curl to crt.sh\n"
+curl -s "https://crt.sh/?q=%.$target&output=json" |  sed 's/\"//g' | tr ',' '\n' | tr ':' '\n' | grep $target >> $c
+#
+
+# duckduckgo dorking # unfinished
+echo -e "[+] curl to duckduckgo"
+curl -s https://duckduckgo.com/html/?q=$target.com+-www | tr ' ' '\n' | tr '%2F/"<>:;@' '\n' | grep $target >> $c
+#
+
+# bgp # unfinished
+# TODO: add more hosting services
+# TODO: combine ip output with the concentrated list? (currently going to bgp.txt)
+
+#checking if third party hosting service
+hostingCheck=$(curl -s http://ip-api.com/json/$target | sed -e 's/[{""},]/''/g' | awk 'NR==1{print$2}')
+
+case $hostingCheck in
+  *"Amazon"*)
+  echo -e " +--> not using bgp since $target are hosted on $hostingCheck"
+  ;;
+
+  *"Incapsula"*)
+  echo -e " +--> not using bgp since $target are hosted on $hostingCheck"
+  ;;
+
+  *"Cloudflare"*)
+  echo -e " +--> not using bgp since $target are hosted on $hostingCheck"
+  ;;
+
+
+  *)
+  echo -e ""
+  echo -e "[+] sending curl to $hostingCheck (result from hostingCheck)"
+  # fetch all IP addresses registered under the ASN number
+  curl -s https://api.hackertarget.com/aslookup/?q=$target > bgp.txt
+  ;;
+esac
+#
+
+_sort $c
+}
+#-------------------------------------------------------------------------------
+
+#---> sorter -------------------------------------------------------------------
+# # sort/clean output # #
+_sort() {
+  echo "[+] sorting $1 and removing duplicates..."
+  sort -u $1 | grep -P -v '^[a-z0-9-]+[.]+[a-z0-9-]+$' | grep -v "*" > $1.tmp
+  rm $1 && mv $1.tmp $1
+}
+#-------------------------------------------------------------------------------
+
+main () {
+if [[ $1 =~ .*-h.* ]]
+then
+   echo "[+]help: ./watcher example.com (no www.)"
+   exit
+fi
+  _interface $1
+}
+main $1
