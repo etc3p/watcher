@@ -34,7 +34,7 @@ touch $c
 #  docker pull opendevsecops/sublist3r
 # fi
 # echo -e "[+] running $sublisterExists\n"
-# docker run opendevsecops/sublist3r -d $target | grep $target | grep -v "\[|\-" | tee -a $c
+# docker run opendevsecops/sublist3r -d $target | grep $target | grep -v "\[\-" | sed 's/\x1B\[[0-9;]\+[A-Za-z]//g' | tee -a $c
 #
 
 # web archive # done
