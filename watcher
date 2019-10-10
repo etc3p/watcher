@@ -56,8 +56,8 @@ curl -s "https://crt.sh/?q=%.$target&output=json" |  sed 's/\"//g' | tr ',' '\n'
 #
 
 # duckduckgo dorking # unfinished
-echo -e "[+] curl to duckduckgo"
-curl -s https://duckduckgo.com/html/?q=$target.com+-www | tr ' ' '\n' | tr '%2F/"<>:;@' '\n' | grep $target >> $c
+echo -e "[+] curl to duckduckgo (expiremental)"
+curl -s https://duckduckgo.com/html/?q=$target+-www | grep $target | tr ' /><="%2F' '\n' | grep "[A-Za-z0-9_].*\.$target" >> $c
 #
 
 # bgp # unfinished
