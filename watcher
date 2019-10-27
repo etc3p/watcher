@@ -42,7 +42,7 @@ echo -e "[+] curl to webarchive"
 echo " +--> extracting subdomains"
 curl -s "http://web.archive.org/cdx/search/cdx?url=*.$target/*&output=text&fl=original&collapse=urlkey" | sed 's~http[s]*://~~g'| cut -d "/" -f1 | cut -d ":" -f1 >> $c
 echo -e " +--> unrelatedly writing full output to webarchive_$target\n"
-curl -s "web.archive.org/cdx/search/cdx?url=$target/*&output=text&fl=original&collapse=urlkey" | grep -i -v -E "\/css|(\.(png|img|ttf|woff2?|ico|jpe?g|svg|gif|css|webp|eot|bootstrap|pdf|js))" | sort -u >> webarchive_$target
+curl -s "web.archive.org/cdx/search/cdx?url=*.$target/*&output=text&fl=original&collapse=urlkey" | grep -i -v -E "\/css|(\.(png|img|ttf|woff2?|ico|jpe?g|svg|gif|css|webp|eot|bootstrap|pdf|js))" | sort -u >> webarchive_$target
 #
 
 # cert spotter # done
