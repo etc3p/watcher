@@ -19,4 +19,4 @@ You may take inspiration from this and add any other docker-based tool that you 
 2. to easily search for a prepared image, use "docker search xyz"
 3. if your docker image only takes an IP as a target, do as follows:
 
-     docker run johnpaulada/ctfr -d $(resolveip -s $target) | tee -a $c
+        docker run johnpaulada/ctfr -d $(resolveip -s $target) | tee -a $c
