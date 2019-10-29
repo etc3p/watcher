@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-set -e
-#set -o xtrace # verbose debug
+
+# apt install docker.io sudo docker-compose
+
+# set -e
+# set -o xtrace # verbose debug
 
 #---> main interface -----------------------------------------------------------
 _interface () {
 # # initial variables # #
 target=$1 #TODO: support multiple hosts.
-outfile="outfile_"
 now=$(date +'%d-%m-%Y_%H:%M') # can be used as part of the file name
-c=$outfile$target
+c=$target
 echo -e "Watcher started...     $now"
 
 echo -e "[+] targeting: $target"
@@ -23,7 +25,7 @@ then
    sudo docker build -t amass https://github.com/OWASP/Amass.git
 fi
 echo -e "[+] running $amassExists\n"
-sudo docker run amass enum -passive -d $target | tee -a $c
+sudo docker run amass enum -passive -d $target | sed -e "s/c-domain__target--//" | tee -a $c
 #
 
 # sublist3r #
@@ -96,7 +98,7 @@ case $hostingCheck in
   echo -e ""
   echo -e "[+] sending curl to $hostingCheck (result from hostingCheck)"
   # fetch all IP addresses registered under the ASN number
-  curl -s https://api.hackertarget.com/aslookup/?q=$target > bgp.txt
+  curl -s https://api.hackertarget.com/aslookup/?q=$target > bgp_$c
   ;;
 esac
 #
@@ -111,6 +113,9 @@ _sort() {
   echo "[+] sorting $1 and removing duplicates..."
   sort -u $1 | grep -P -v '^[a-z0-9-]+[.]+[a-z0-9-]+$' | grep -v "*" > $1.tmp
   rm $1 && mv $1.tmp $1
+
+  echo "[+] creating another file with resolved IP's"
+  cat $1 | sort -u | xargs -I {} host {} | grep "has address" | awk '{print $1"\t"$4}' | column -t > ips_$1
 }
 #-------------------------------------------------------------------------------
 
