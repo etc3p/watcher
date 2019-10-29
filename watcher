@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# apt install docker.io sudo docker-compose
+# apt install docker.io
 
 # set -e
 # set -o xtrace # verbose debug
